@@ -12,6 +12,8 @@
   ;; basic
   (=: [a b c] [1 2 3])
   (assert (= (, a b c) (, 1 2 3)))
+  (=: [a b c] (cycle [1 2]))
+  (assert (= (, a b c) (, 1 2 1)))
   ;; nested
   (=: [a [b [c [d]]] e] [11 [22 [33 [44]]] 55])
   (assert (= (, a b c d e) (, 11 22 33 44 55)))
@@ -20,8 +22,8 @@
   (assert (= (, a b c) (, 0 1 2)))
   (assert (= full [0 1 2 3 4 5]))
   ;; :& and :as
-  (=: [a b :& rest :as full] "abcdefg")
-  (assert (= (, a b rest) (, "a" "b" "cdefg")))
+  (=: [a b :& the-rest :as full] "abcdefg")
+  (assert (= (, a b the-rest) (, "a" "b" "cdefg")))
   (assert (= full "abcdefg")))
 
 (defn test-dict []
@@ -67,7 +69,7 @@
   (=: {[{:from ["count" "type"]}
         {y-count "count"} :as cells] "cells"
        [style color] "format"
-       [X :& rest] "options"
+       [X :& the-rest] "options"
        foo "foo"
        :or {foo 42  options "a"}
        :as full}
@@ -76,7 +78,7 @@
   (assert (= y-count 6))
   (assert (= cells (get data "cells")))
   (assert (= (, style color) (, "pretty" "purple")))
-  (assert (= (, X rest)) (, "x" "yzq"))
+  (assert (= (, X the-rest)) (, "x" "yzq"))
   (assert (= foo 42))
   (assert (= full data)))
 

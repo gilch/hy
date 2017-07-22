@@ -81,17 +81,25 @@
   Use ``:as foo`` option in binds to bind the whole iterable to ``foo``.
   For example, try ``(dest-list [a b [c :& d :as q] :as full] [1 2 [3 4 5]])``
   "
-  (setv dlist (gensym 'dlist)
-        ret [dlist expr]
-        append ret.extend
-        ibinds (iter binds)
-        seen #{}
-        i 0)
-  (for [target ibinds]
-    (defn test [x] (_check seen x target))
-    (if (test ':as) (append [(next ibinds) dlist])
-        (test ':&) (append `[~(next ibinds) (cut ~dlist ~i)])
-        (do (append (destructure target `(get ~dlist ~i)))
-            (+= i 1))))
-  ret)
-
+  (if (or (in :as binds) (in :& binds))
+    (do
+      ; We're going to need to consume the whole iterator, so just
+      ; listify it up front.
+      (setv orig (gensym 'orig)
+            dlist (gensym 'dlist)
+            ret `[~orig ~expr ~dlist (list ~orig)]
+            append ret.extend
+            ibinds (iter binds)
+            seen #{}
+            i 0)
+      (for [target ibinds]
+          (defn test [x] (_check seen x target))
+          (if (test ':as) (append [(next ibinds) orig])
+              (test ':&) (append `[~(next ibinds) (cut ~dlist ~i)])
+              (do
+                  (append (destructure target `(get ~dlist ~i)))
+                  (+= i 1))))
+      ret)
+    ; Otherwise, we have only plain variables. Use `take` so we
+    ; don't diverge on an infinite iterator.
+    `[~binds (take ~(len binds) ~expr)]))
